@@ -351,7 +351,7 @@ static const char INDEX_HTML[] PROGMEM = R"rawliteral(
         fetchStatus();
         fetchSchedule();
         fetchSpeed();
-        setInterval(fetchStatus, 5000);
+        setInterval(fetchStatus, 1000);   // Update every 1s (fastest)
         setInterval(fetchSchedule, 30000);
     </script>
 </body>

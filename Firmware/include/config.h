@@ -48,12 +48,13 @@
 #define MQTT_OFFLINE_QUEUE_SIZE 10      // Max messages in offline queue
 
 // Sensors
-#define SENSOR_READ_INTERVAL_MS 5000    // Read sensors every 5s
-#define SENSOR_FILTER_SAMPLES   5       // Moving average samples
+#define SENSOR_READ_INTERVAL_MS 500     // Read sensors every 500ms (fastest)
+#define SENSOR_FILTER_SAMPLES   3       // Moving average samples (faster)
+#define MQTT_PUBLISH_INTERVAL_MS 5000   // Publish MQTT every 5s (reduce traffic)
 
 // Pump
-#define PUMP_MAX_RUNTIME_SEC    60      // Auto-off after 60s (safety)
-#define PUMP_MIN_OFF_TIME_MS    30000   // 30 seconds minimum off time (anti-cycling)
+#define PUMP_MAX_RUNTIME_SEC    3600    // Auto-off after 1 hour (for testing)
+#define PUMP_MIN_OFF_TIME_MS    0       // No cooldown (for testing)
 
 // NTP
 #define NTP_SYNC_INTERVAL_MS    21600000 // 6 hours

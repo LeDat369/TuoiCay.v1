@@ -773,8 +773,8 @@ void loop() {
     //-------------------------------------------------------------------------
     mqttMgr.update();
     
-    // Publish sensor data periodically (every 5 seconds)
-    if (mqttMgr.isConnected() && now - lastMqttPublish >= SENSOR_READ_INTERVAL_MS) {
+    // Publish sensor data periodically (every 5 seconds to reduce traffic)
+    if (mqttMgr.isConnected() && now - lastMqttPublish >= MQTT_PUBLISH_INTERVAL_MS) {
         lastMqttPublish = now;
         mqttPublishSensorData();
     }
