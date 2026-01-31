@@ -47,6 +47,17 @@ static const char INDEX_HTML[] PROGMEM = R"rawliteral(
         .config { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
         .config input { flex: 1; padding: 10px; border: 1px solid #333; border-radius: 5px; background: #0f0f23; color: #fff; }
         .info { font-size: 12px; color: #666; text-align: center; margin-top: 20px; }
+        .schedule-item { display: flex; align-items: center; gap: 8px; margin: 8px 0; padding: 10px; background: #0f0f23; border-radius: 8px; }
+        .schedule-item input[type="time"] { padding: 8px; border: 1px solid #333; border-radius: 5px; background: #1a1a2e; color: #fff; }
+        .schedule-item input[type="number"] { width: 60px; padding: 8px; border: 1px solid #333; border-radius: 5px; background: #1a1a2e; color: #fff; }
+        .schedule-item label { font-size: 12px; color: #888; }
+        .switch { position: relative; width: 50px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #333; border-radius: 26px; transition: 0.3s; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.3s; }
+        input:checked + .slider { background: #00c853; }
+        input:checked + .slider:before { transform: translateX(24px); }
+        .btn-small { padding: 8px 15px; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -73,6 +84,16 @@ static const char INDEX_HTML[] PROGMEM = R"rawliteral(
         </div>
         
         <div class="card">
+            <h2>🎚️ Tốc độ bơm</h2>
+            <div style="display:flex; align-items:center; gap:15px; margin:10px 0;">
+                <input type="range" id="pumpSpeed" min="30" max="100" value="100" 
+                       style="flex:1; height:8px;" oninput="updateSpeedLabel(this.value)">
+                <span id="speedLabel" style="min-width:50px; font-weight:bold;">100%</span>
+            </div>
+            <button class="btn btn-mode" onclick="setSpeed()">💾 Áp dụng tốc độ</button>
+        </div>
+        
+        <div class="card">
             <h2>Cài đặt ngưỡng</h2>
             <div class="config">
                 <label>Khô:</label>
@@ -81,6 +102,61 @@ static const char INDEX_HTML[] PROGMEM = R"rawliteral(
                 <input type="number" id="wetThreshold" min="0" max="100" value="50">
                 <button class="btn" style="width:auto; padding:10px 20px;" onclick="saveConfig()">Lưu</button>
             </div>
+        </div>
+        
+        <div class="card">
+            <h2>⏰ Lịch tưới tự động</h2>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                <span>Bật lịch tưới</span>
+                <label class="switch">
+                    <input type="checkbox" id="scheduleEnabled" onchange="toggleSchedule()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div id="scheduleList">
+                <div class="schedule-item">
+                    <label>Lịch 1:</label>
+                    <input type="time" id="sched0_time" value="06:00">
+                    <input type="number" id="sched0_dur" min="10" max="300" value="30" placeholder="giây">
+                    <label>giây</label>
+                    <label class="switch">
+                        <input type="checkbox" id="sched0_en">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="schedule-item">
+                    <label>Lịch 2:</label>
+                    <input type="time" id="sched1_time" value="18:00">
+                    <input type="number" id="sched1_dur" min="10" max="300" value="30" placeholder="giây">
+                    <label>giây</label>
+                    <label class="switch">
+                        <input type="checkbox" id="sched1_en">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="schedule-item">
+                    <label>Lịch 3:</label>
+                    <input type="time" id="sched2_time" value="12:00">
+                    <input type="number" id="sched2_dur" min="10" max="300" value="30" placeholder="giây">
+                    <label>giây</label>
+                    <label class="switch">
+                        <input type="checkbox" id="sched2_en">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="schedule-item">
+                    <label>Lịch 4:</label>
+                    <input type="time" id="sched3_time" value="00:00">
+                    <input type="number" id="sched3_dur" min="10" max="300" value="30" placeholder="giây">
+                    <label>giây</label>
+                    <label class="switch">
+                        <input type="checkbox" id="sched3_en">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            <button class="btn btn-mode" onclick="saveSchedule()">💾 Lưu lịch tưới</button>
+            <div id="scheduleInfo" style="font-size:12px; color:#888; margin-top:10px; text-align:center;"></div>
         </div>
         
         <div class="info">
@@ -119,7 +195,19 @@ static const char INDEX_HTML[] PROGMEM = R"rawliteral(
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({action: 'toggle'})
-            }).then(() => setTimeout(fetchStatus, 200));
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (d.ok) {
+                    const ps = document.getElementById('pumpStatus');
+                    ps.textContent = d.pump ? 'ON' : 'OFF';
+                    ps.className = 'status ' + (d.pump ? 'on' : 'off');
+                } else if (d.error) {
+                    alert(d.error);
+                }
+                setTimeout(fetchStatus, 500);
+            })
+            .catch(e => console.error('Error:', e));
         }
         
         function toggleMode() {
@@ -127,7 +215,17 @@ static const char INDEX_HTML[] PROGMEM = R"rawliteral(
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({toggle: true})
-            }).then(() => setTimeout(fetchStatus, 200));
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (d.ok) {
+                    const ms = document.getElementById('modeStatus');
+                    ms.textContent = d.autoMode ? 'AUTO' : 'MANUAL';
+                    ms.className = 'status ' + (d.autoMode ? 'auto' : 'manual');
+                }
+                setTimeout(fetchStatus, 500);
+            })
+            .catch(e => console.error('Error:', e));
         }
         
         function saveConfig() {
@@ -140,8 +238,121 @@ static const char INDEX_HTML[] PROGMEM = R"rawliteral(
             }).then(() => { alert('Đã lưu!'); fetchStatus(); });
         }
         
+        // Speed control functions
+        function updateSpeedLabel(val) {
+            document.getElementById('speedLabel').textContent = val + '%';
+        }
+        
+        function setSpeed() {
+            const speed = parseInt(document.getElementById('pumpSpeed').value);
+            fetch('/api/speed', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({speed: speed})
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (d.ok) {
+                    alert('Đã áp dụng tốc độ ' + d.speed + '%');
+                }
+            })
+            .catch(e => console.error('Error:', e));
+        }
+        
+        function fetchSpeed() {
+            fetch('/api/speed')
+                .then(r => r.json())
+                .then(d => {
+                    if (d.speed) {
+                        document.getElementById('pumpSpeed').value = d.speed;
+                        document.getElementById('speedLabel').textContent = d.speed + '%';
+                    }
+                })
+                .catch(e => console.error('Error:', e));
+        }
+        
+        // Schedule functions
+        function fetchSchedule() {
+            fetch('/api/schedule')
+                .then(r => r.json())
+                .then(d => {
+                    document.getElementById('scheduleEnabled').checked = d.enabled;
+                    if (d.schedules) {
+                        for (let i = 0; i < 4; i++) {
+                            const s = d.schedules[i];
+                            if (s) {
+                                const h = String(s.hour).padStart(2,'0');
+                                const m = String(s.minute).padStart(2,'0');
+                                document.getElementById('sched'+i+'_time').value = h+':'+m;
+                                document.getElementById('sched'+i+'_dur').value = s.duration;
+                                document.getElementById('sched'+i+'_en').checked = s.enabled;
+                            }
+                        }
+                    }
+                    updateScheduleInfo(d);
+                })
+                .catch(e => console.error('Schedule error:', e));
+        }
+        
+        function updateScheduleInfo(d) {
+            const info = document.getElementById('scheduleInfo');
+            if (d.nextRun) {
+                info.textContent = 'Lịch tiếp theo: ' + d.nextRun;
+            } else if (!d.enabled) {
+                info.textContent = 'Lịch tưới đang TẮT';
+            } else {
+                info.textContent = '';
+            }
+        }
+        
+        function toggleSchedule() {
+            const enabled = document.getElementById('scheduleEnabled').checked;
+            fetch('/api/schedule', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({enabled: enabled, toggle: true})
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (d.ok) {
+                    document.getElementById('scheduleEnabled').checked = d.enabled;
+                    updateScheduleInfo(d);
+                }
+            })
+            .catch(e => console.error('Toggle schedule error:', e));
+        }
+        
+        function saveSchedule() {
+            const schedules = [];
+            for (let i = 0; i < 4; i++) {
+                const time = document.getElementById('sched'+i+'_time').value.split(':');
+                schedules.push({
+                    hour: parseInt(time[0]),
+                    minute: parseInt(time[1]),
+                    duration: parseInt(document.getElementById('sched'+i+'_dur').value),
+                    enabled: document.getElementById('sched'+i+'_en').checked
+                });
+            }
+            fetch('/api/schedule', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({schedules: schedules})
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (d.ok) {
+                    alert('Đã lưu lịch tưới!');
+                    fetchSchedule();
+                }
+            })
+            .catch(e => console.error('Save schedule error:', e));
+        }
+        
         fetchStatus();
+        fetchSchedule();
+        fetchSpeed();
         setInterval(fetchStatus, 5000);
+        setInterval(fetchSchedule, 30000);
     </script>
 </body>
 </html>
@@ -162,8 +373,14 @@ WebServerManager::WebServerManager(uint16_t port)
     , _setPump(nullptr)
     , _setAutoMode(nullptr)
     , _setThresholds(nullptr)
+    , _getSpeed(nullptr)
+    , _setSpeed(nullptr)
     , _thresholdDry(nullptr)
     , _thresholdWet(nullptr)
+    , _getSchedule(nullptr)
+    , _setScheduleEnabled(nullptr)
+    , _setScheduleEntry(nullptr)
+    , _saveSchedule(nullptr)
 {
 }
 
@@ -174,6 +391,10 @@ bool WebServerManager::begin() {
     _server.on("/api/pump", HTTP_POST, [this]() { _handlePump(); });
     _server.on("/api/mode", HTTP_POST, [this]() { _handleMode(); });
     _server.on("/api/config", HTTP_POST, [this]() { _handleConfig(); });
+    _server.on("/api/speed", HTTP_GET, [this]() { _handleSpeed(); });
+    _server.on("/api/speed", HTTP_POST, [this]() { _handleSpeed(); });
+    _server.on("/api/schedule", HTTP_GET, [this]() { _handleSchedule(); });
+    _server.on("/api/schedule", HTTP_POST, [this]() { _handleSchedule(); });
     _server.onNotFound([this]() { _handleNotFound(); });
     
     _server.begin();
@@ -254,6 +475,14 @@ void WebServerManager::_handlePump() {
         return;
     }
     
+    // Check if in AUTO mode - cannot manually control pump
+    bool isAutoMode = _getAutoMode ? _getAutoMode() : false;
+    if (isAutoMode) {
+        LOG_WRN(MOD_WEB, "pump", "Cannot control pump in AUTO mode!");
+        _sendJson(200, "{\"ok\":false,\"error\":\"Đang ở chế độ TỰ ĐỘNG. Chuyển sang THỦ CÔNG để điều khiển bơm.\",\"autoMode\":true}");
+        return;
+    }
+    
     JsonDocument doc;
     DeserializationError err = deserializeJson(doc, _server.arg("plain"));
     
@@ -268,15 +497,23 @@ void WebServerManager::_handlePump() {
     if (_setPump) {
         if (strcmp(action, "on") == 0) {
             _setPump(true);
+            LOG_INF(MOD_WEB, "pump", "Pump ON via web");
         } else if (strcmp(action, "off") == 0) {
             _setPump(false);
+            LOG_INF(MOD_WEB, "pump", "Pump OFF via web");
         } else if (strcmp(action, "toggle") == 0) {
             bool current = _getPumpState ? _getPumpState() : false;
             _setPump(!current);
+            LOG_INF(MOD_WEB, "pump", "Pump TOGGLE -> %s via web", !current ? "ON" : "OFF");
         }
     }
     
-    _sendJson(200, "{\"ok\":true}");
+    // Return current state so UI can update immediately
+    bool pumpState = _getPumpState ? _getPumpState() : false;
+    String response = "{\"ok\":true,\"pump\":";
+    response += pumpState ? "true" : "false";
+    response += "}";
+    _sendJson(200, response);
 }
 
 void WebServerManager::_handleMode() {
@@ -299,13 +536,20 @@ void WebServerManager::_handleMode() {
         if (doc["toggle"].is<bool>() && doc["toggle"].as<bool>()) {
             bool current = _getAutoMode ? _getAutoMode() : false;
             _setAutoMode(!current);
+            LOG_INF(MOD_WEB, "mode", "Mode TOGGLE -> %s via web", !current ? "AUTO" : "MANUAL");
         } else if (doc["mode"].is<const char*>()) {
             const char* mode = doc["mode"];
             _setAutoMode(strcmp(mode, "auto") == 0);
+            LOG_INF(MOD_WEB, "mode", "Mode SET -> %s via web", mode);
         }
     }
     
-    _sendJson(200, "{\"ok\":true}");
+    // Return current state so UI can update immediately
+    bool modeState = _getAutoMode ? _getAutoMode() : false;
+    String response = "{\"ok\":true,\"autoMode\":";
+    response += modeState ? "true" : "false";
+    response += "}";
+    _sendJson(200, response);
 }
 
 void WebServerManager::_handleConfig() {
@@ -338,6 +582,174 @@ void WebServerManager::_handleConfig() {
     }
     
     _sendJson(200, "{\"ok\":true}");
+}
+
+void WebServerManager::_handleSpeed() {
+    // Handle GET - return current speed
+    if (_server.method() == HTTP_GET) {
+        LOG_DBG(MOD_WEB, "req", "GET /api/speed");
+        
+        uint8_t speed = _getSpeed ? _getSpeed() : 100;
+        String response = "{\"speed\":";
+        response += speed;
+        response += "}";
+        _sendJson(200, response);
+        return;
+    }
+    
+    // Handle POST - set speed
+    LOG_DBG(MOD_WEB, "req", "POST /api/speed");
+    
+    if (!_server.hasArg("plain")) {
+        _sendError(400, "No body");
+        return;
+    }
+    
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, _server.arg("plain"));
+    
+    if (err) {
+        _sendError(400, "Invalid JSON");
+        return;
+    }
+    
+    if (_setSpeed && doc["speed"].is<int>()) {
+        uint8_t speed = doc["speed"];
+        if (speed >= 30 && speed <= 100) {
+            _setSpeed(speed);
+            LOG_INF(MOD_WEB, "speed", "Pump speed set to %d%%", speed);
+            
+            String response = "{\"ok\":true,\"speed\":";
+            response += speed;
+            response += "}";
+            _sendJson(200, response);
+        } else {
+            _sendError(400, "Speed must be 30-100%");
+        }
+    } else {
+        _sendError(400, "Missing speed parameter");
+    }
+}
+
+void WebServerManager::setScheduleCallbacks(
+    GetScheduleConfigFunc getSchedule,
+    SetScheduleEnabledFunc setEnabled,
+    SetScheduleEntryFunc setEntry,
+    SaveScheduleFunc saveSchedule
+) {
+    _getSchedule = getSchedule;
+    _setScheduleEnabled = setEnabled;
+    _setScheduleEntry = setEntry;
+    _saveSchedule = saveSchedule;
+}
+
+void WebServerManager::_handleSchedule() {
+    // Handle GET - return schedule config
+    if (_server.method() == HTTP_GET) {
+        LOG_DBG(MOD_WEB, "req", "GET /api/schedule");
+        
+        JsonDocument doc;
+        
+        if (_getSchedule) {
+            WebScheduleConfig config;
+            String nextRun;
+            _getSchedule(&config, &nextRun);
+            
+            doc["enabled"] = config.enabled;
+            doc["nextRun"] = nextRun;
+            
+            JsonArray schedules = doc["schedules"].to<JsonArray>();
+            for (int i = 0; i < 4; i++) {
+                JsonObject s = schedules.add<JsonObject>();
+                s["hour"] = config.entries[i].hour;
+                s["minute"] = config.entries[i].minute;
+                s["duration"] = config.entries[i].duration;
+                s["enabled"] = config.entries[i].enabled;
+            }
+        } else {
+            doc["enabled"] = false;
+            doc["error"] = "Schedule not available";
+        }
+        
+        String json;
+        serializeJson(doc, json);
+        _sendJson(200, json);
+        return;
+    }
+    
+    // Handle POST - update schedule
+    LOG_DBG(MOD_WEB, "req", "POST /api/schedule");
+    
+    if (!_server.hasArg("plain")) {
+        _sendError(400, "No body");
+        return;
+    }
+    
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, _server.arg("plain"));
+    
+    if (err) {
+        _sendError(400, "Invalid JSON");
+        return;
+    }
+    
+    // Handle toggle enabled
+    if (doc["toggle"].is<bool>() && doc["toggle"].as<bool>()) {
+        if (_setScheduleEnabled) {
+            bool enabled = doc["enabled"].as<bool>();
+            _setScheduleEnabled(enabled);
+            LOG_INF(MOD_WEB, "schedule", "Schedule %s via web", enabled ? "ENABLED" : "DISABLED");
+            
+            // Save and return new state
+            if (_saveSchedule) _saveSchedule();
+            
+            JsonDocument resp;
+            resp["ok"] = true;
+            resp["enabled"] = enabled;
+            
+            if (_getSchedule) {
+                WebScheduleConfig config;
+                String nextRun;
+                _getSchedule(&config, &nextRun);
+                resp["nextRun"] = nextRun;
+            }
+            
+            String json;
+            serializeJson(resp, json);
+            _sendJson(200, json);
+            return;
+        }
+    }
+    
+    // Handle update schedules
+    if (doc["schedules"].is<JsonArray>()) {
+        JsonArray schedules = doc["schedules"].as<JsonArray>();
+        
+        if (_setScheduleEntry) {
+            int i = 0;
+            for (JsonObject s : schedules) {
+                if (i >= 4) break;
+                
+                uint8_t hour = s["hour"] | 0;
+                uint8_t minute = s["minute"] | 0;
+                uint16_t duration = s["duration"] | 30;
+                bool enabled = s["enabled"] | false;
+                
+                _setScheduleEntry(i, hour, minute, duration, enabled);
+                LOG_INF(MOD_WEB, "schedule", "Entry %d: %02d:%02d dur=%ds en=%d", 
+                        i, hour, minute, duration, enabled);
+                i++;
+            }
+            
+            // Save changes
+            if (_saveSchedule) _saveSchedule();
+        }
+        
+        _sendJson(200, "{\"ok\":true}");
+        return;
+    }
+    
+    _sendError(400, "Invalid request");
 }
 
 void WebServerManager::_handleNotFound() {

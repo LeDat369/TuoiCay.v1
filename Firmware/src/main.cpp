@@ -95,6 +95,12 @@ uint16_t getPumpRuntime() { return pump.getRuntime(); }
 bool getAutoMode() { return autoModeEnabled; }
 
 void setPump(bool on) {
+    // Khi AUTO mode, không cho phép điều khiển thủ công
+    if (autoModeEnabled) {
+        LOG_WRN(MOD_PUMP, "manual", "Cannot control pump in AUTO mode!");
+        return;
+    }
+    
     if (on) {
         pump.turnOn(PumpReason::MANUAL);
     } else {
@@ -111,6 +117,61 @@ void setThresholds(uint8_t dry, uint8_t wet) {
     thresholdDry = dry;
     thresholdWet = wet;
     LOG_INF(MOD_SYSTEM, "config", "Thresholds: dry=%d%%, wet=%d%%", dry, wet);
+}
+
+//=============================================================================
+// SPEED CONTROL CALLBACKS
+//=============================================================================
+uint8_t getPumpSpeed() {
+    return pump.getSpeed();
+}
+
+void setPumpSpeed(uint8_t percent) {
+    pump.setSpeed(percent);
+}
+
+//=============================================================================
+// SCHEDULE CALLBACKS
+//=============================================================================
+bool getScheduleConfig(WebScheduleConfig* config, String* nextRun) {
+    if (!config) return false;
+    
+    ScheduleConfig& schedConfig = scheduler.getConfig();
+    config->enabled = schedConfig.enabled;
+    
+    for (int i = 0; i < 4; i++) {
+        ScheduleEntry* entry = scheduler.getEntry(i);
+        if (entry) {
+            config->entries[i].hour = entry->hour;
+            config->entries[i].minute = entry->minute;
+            config->entries[i].duration = entry->duration;
+            config->entries[i].enabled = entry->enabled;
+        }
+    }
+    
+    if (nextRun) {
+        *nextRun = scheduler.getNextScheduleString();
+    }
+    
+    return true;
+}
+
+void setScheduleEnabled(bool enabled) {
+    scheduler.setEnabled(enabled);
+    LOG_INF(MOD_SYSTEM, "schedule", "Schedule %s", enabled ? "enabled" : "disabled");
+}
+
+void setScheduleEntry(uint8_t index, uint8_t hour, uint8_t minute, 
+                      uint16_t duration, bool enabled) {
+    if (index < 4) {
+        scheduler.setEntry(index, hour, minute, duration, enabled);
+    }
+}
+
+void saveScheduleConfig() {
+    if (scheduler.saveSchedule()) {
+        LOG_INF(MOD_SYSTEM, "schedule", "Schedule saved to storage");
+    }
 }
 
 //=============================================================================
@@ -496,6 +557,8 @@ void setup() {
     webServer.setDataProviders(getMoisture, getPumpState, getPumpReason, getPumpRuntime, getAutoMode);
     webServer.setControlCallbacks(setPump, setAutoMode, setThresholds);
     webServer.setThresholdPointers(&thresholdDry, &thresholdWet);
+    webServer.setSpeedCallbacks(getPumpSpeed, setPumpSpeed);
+    webServer.setScheduleCallbacks(getScheduleConfig, setScheduleEnabled, setScheduleEntry, saveScheduleConfig);
     
     //-------------------------------------------------------------------------
     // STEP 11: Initialize MQTT (TASK 4.1)
@@ -595,6 +658,14 @@ void autoWatering() {
             if (pump.turnOn(PumpReason::AUTO)) {
                 LOG_INF(MOD_PUMP, "auto", "Soil dry (%d%% < %d%%), starting pump",
                         moisture, thresholdDry);
+            } else {
+                // Log why pump didn't start (likely cooldown)
+                static unsigned long lastLogTime = 0;
+                if (millis() - lastLogTime > 10000) {  // Log every 10s max
+                    LOG_DBG(MOD_PUMP, "auto", "Pump not started (moisture=%d%%, state=%d, cooldown=%ds)",
+                            moisture, (int)pump.getState(), pump.getCooldownRemaining());
+                    lastLogTime = millis();
+                }
             }
         }
     } else {

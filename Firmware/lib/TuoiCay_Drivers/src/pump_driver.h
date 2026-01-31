@@ -1,17 +1,18 @@
 /**
  * @file pump_driver.h
- * @brief Pump Control Driver with safety features
+ * @brief Pump Control Driver with safety features and PWM speed control
  * 
  * LOGIC:
- * - Control pump via MOSFET (HIGH = ON, LOW = OFF)
+ * - Control pump via MOSFET with PWM for speed control
  * - Safety: auto-off after configurable max runtime
  * - Safety: minimum off time to prevent rapid cycling
  * - Track runtime and state
  * 
  * HARDWARE:
- * - D6 (GPIO12) → MOSFET Gate
+ * - D6 (GPIO12) → MOSFET Gate (PWM capable)
  * - MOSFET: N-Channel, LOW-side switch
- * - Logic: HIGH = pump ON, LOW = pump OFF
+ * - Logic: HIGH/PWM = pump ON, LOW = pump OFF
+ * - PWM: 0-100% duty cycle for speed control
  * 
  * RULES: #ACTUATOR(15) #SAFETY(2)
  */
@@ -21,6 +22,13 @@
 
 #include <Arduino.h>
 #include <config.h>
+
+// PWM Configuration for ESP8266
+#define PUMP_PWM_FREQ       1000    // 1kHz PWM frequency
+#define PUMP_PWM_RANGE      1023    // 10-bit resolution (0-1023)
+#define PUMP_SPEED_MIN      30      // Minimum speed % (below this pump may stall)
+#define PUMP_SPEED_MAX      100     // Maximum speed %
+#define PUMP_SPEED_DEFAULT  100     // Default speed %
 
 //=============================================================================
 // PUMP STATE ENUM
@@ -151,6 +159,18 @@ public:
     void setMinOffTime(uint32_t ms);
     
     /**
+     * @brief Set pump speed (PWM duty cycle)
+     * @param percent Speed percentage (30-100%)
+     */
+    void setSpeed(uint8_t percent);
+    
+    /**
+     * @brief Get current speed setting
+     * @return Speed percentage (30-100%)
+     */
+    uint8_t getSpeed() const { return _speedPercent; }
+    
+    /**
      * @brief Emergency stop - immediately turn off pump
      * Does NOT start cooldown
      */
@@ -177,14 +197,20 @@ private:
     uint16_t _maxRuntimeSec;                // Max runtime before auto-off
     uint16_t _requestedDuration;            // Requested duration for this run
     uint32_t _minOffTimeMs;                 // Minimum off time (cooldown)
+    uint8_t _speedPercent;                  // PWM speed (30-100%)
     
     bool _initialized;
     
     /**
-     * @brief Set physical pin state
-     * @param on true = pump on
+     * @brief Set physical pin state with PWM
+     * @param on true = pump on at current speed
      */
     void _setPin(bool on);
+    
+    /**
+     * @brief Apply PWM value based on speed setting
+     */
+    void _applyPWM();
 };
 
 #endif // PUMP_DRIVER_H

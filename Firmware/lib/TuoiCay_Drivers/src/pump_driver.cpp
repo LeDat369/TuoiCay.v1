@@ -28,6 +28,7 @@ PumpController::PumpController(uint8_t pin)
     , _maxRuntimeSec(PUMP_MAX_RUNTIME_SEC)
     , _requestedDuration(0)
     , _minOffTimeMs(PUMP_MIN_OFF_TIME_MS)
+    , _speedPercent(PUMP_SPEED_DEFAULT)
     , _initialized(false)
 {
 }
@@ -35,15 +36,21 @@ PumpController::PumpController(uint8_t pin)
 bool PumpController::begin() {
     // CRITICAL: Set pin mode and OFF state FIRST
     pinMode(_pin, OUTPUT);
+    
+    // Configure PWM
+    analogWriteFreq(PUMP_PWM_FREQ);
+    analogWriteRange(PUMP_PWM_RANGE);
+    
     _setPin(false);  // Pump OFF
     
     _state = PumpState::OFF;
     _reason = PumpReason::NONE;
-    _offTime = millis();
+    // Set _offTime far in the past so no cooldown at boot
+    _offTime = millis() - _minOffTimeMs - 1000;
     _initialized = true;
     
-    LOG_INF(MOD_PUMP, "init", "Ready (pin=%d, maxRun=%ds, cooldown=%lums)",
-            _pin, _maxRuntimeSec, _minOffTimeMs);
+    LOG_INF(MOD_PUMP, "init", "Ready (pin=%d, maxRun=%ds, cooldown=%lums, speed=%d%%)",
+            _pin, _maxRuntimeSec, _minOffTimeMs, _speedPercent);
     
     return true;
 }
@@ -60,11 +67,19 @@ bool PumpController::turnOn(PumpReason reason, uint16_t duration) {
         return true;
     }
     
-    // Check cooldown
-    if (_state == PumpState::COOLDOWN) {
+    // Check cooldown - ONLY for AUTO mode
+    // Manual and Schedule bypass cooldown for immediate control
+    if (_state == PumpState::COOLDOWN && reason == PumpReason::AUTO) {
         uint16_t remaining = getCooldownRemaining();
-        LOG_WRN(MOD_PUMP, "on", "In cooldown, %ds remaining", remaining);
+        LOG_WRN(MOD_PUMP, "on", "Auto mode in cooldown, %ds remaining", remaining);
         return false;
+    }
+    
+    // If in cooldown but not AUTO, clear cooldown state
+    if (_state == PumpState::COOLDOWN) {
+        _state = PumpState::OFF;
+        LOG_INF(MOD_PUMP, "on", "Cooldown bypassed for %s mode", 
+                reason == PumpReason::MANUAL ? "manual" : "schedule");
     }
     
     // Set duration
@@ -199,6 +214,20 @@ void PumpController::setMinOffTime(uint32_t ms) {
     LOG_INF(MOD_PUMP, "config", "Min off time set to %lums", ms);
 }
 
+void PumpController::setSpeed(uint8_t percent) {
+    // Clamp to valid range
+    if (percent < PUMP_SPEED_MIN) percent = PUMP_SPEED_MIN;
+    if (percent > PUMP_SPEED_MAX) percent = PUMP_SPEED_MAX;
+    
+    _speedPercent = percent;
+    LOG_INF(MOD_PUMP, "config", "Speed set to %d%%", percent);
+    
+    // If pump is running, apply new speed immediately
+    if (_state == PumpState::ON) {
+        _applyPWM();
+    }
+}
+
 void PumpController::emergencyStop() {
     LOG_ERR(MOD_PUMP, "ESTOP", "EMERGENCY STOP!");
     _setPin(false);
@@ -209,5 +238,15 @@ void PumpController::emergencyStop() {
 }
 
 void PumpController::_setPin(bool on) {
-    digitalWrite(_pin, on ? PUMP_ON : PUMP_OFF);
+    if (on) {
+        _applyPWM();
+    } else {
+        analogWrite(_pin, 0);  // PWM off
+    }
+}
+
+void PumpController::_applyPWM() {
+    // Convert percent to PWM value (0-1023)
+    uint16_t pwmValue = (_speedPercent * PUMP_PWM_RANGE) / 100;
+    analogWrite(_pin, pwmValue);
 }

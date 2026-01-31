@@ -53,7 +53,7 @@
 
 // Pump
 #define PUMP_MAX_RUNTIME_SEC    60      // Auto-off after 60s (safety)
-#define PUMP_MIN_OFF_TIME_MS    300000  // 5 minutes minimum off time (anti-cycling)
+#define PUMP_MIN_OFF_TIME_MS    30000   // 30 seconds minimum off time (anti-cycling)
 
 // NTP
 #define NTP_SYNC_INTERVAL_MS    21600000 // 6 hours

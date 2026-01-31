@@ -41,6 +41,28 @@ typedef void (*SetPumpFunc)(bool on);
 typedef void (*SetAutoModeFunc)(bool enabled);
 typedef void (*SetThresholdsFunc)(uint8_t dry, uint8_t wet);
 
+// Speed control callbacks
+typedef uint8_t (*GetPumpSpeedFunc)();
+typedef void (*SetPumpSpeedFunc)(uint8_t percent);
+
+// Schedule callbacks
+struct WebScheduleEntry {
+    uint8_t hour;
+    uint8_t minute;
+    uint16_t duration;
+    bool enabled;
+};
+
+struct WebScheduleConfig {
+    bool enabled;
+    WebScheduleEntry entries[4];
+};
+
+typedef bool (*GetScheduleConfigFunc)(WebScheduleConfig* config, String* nextRun);
+typedef void (*SetScheduleEnabledFunc)(bool enabled);
+typedef void (*SetScheduleEntryFunc)(uint8_t index, uint8_t hour, uint8_t minute, uint16_t duration, bool enabled);
+typedef void (*SaveScheduleFunc)();
+
 //=============================================================================
 // WEB SERVER CLASS
 //=============================================================================
@@ -105,6 +127,24 @@ public:
         _thresholdDry = dry;
         _thresholdWet = wet;
     }
+    
+    /**
+     * @brief Set speed control callbacks
+     */
+    void setSpeedCallbacks(GetPumpSpeedFunc getSpeed, SetPumpSpeedFunc setSpeed) {
+        _getSpeed = getSpeed;
+        _setSpeed = setSpeed;
+    }
+    
+    /**
+     * @brief Set schedule callbacks
+     */
+    void setScheduleCallbacks(
+        GetScheduleConfigFunc getSchedule,
+        SetScheduleEnabledFunc setEnabled,
+        SetScheduleEntryFunc setEntry,
+        SaveScheduleFunc saveSchedule
+    );
 
 private:
     ESP8266WebServer _server;
@@ -122,9 +162,19 @@ private:
     SetAutoModeFunc _setAutoMode;
     SetThresholdsFunc _setThresholds;
     
+    // Speed callbacks
+    GetPumpSpeedFunc _getSpeed;
+    SetPumpSpeedFunc _setSpeed;
+    
     // Threshold pointers
     uint8_t* _thresholdDry;
     uint8_t* _thresholdWet;
+    
+    // Schedule callbacks
+    GetScheduleConfigFunc _getSchedule;
+    SetScheduleEnabledFunc _setScheduleEnabled;
+    SetScheduleEntryFunc _setScheduleEntry;
+    SaveScheduleFunc _saveSchedule;
     
     // Route handlers
     void _handleRoot();
@@ -132,6 +182,8 @@ private:
     void _handlePump();
     void _handleMode();
     void _handleConfig();
+    void _handleSpeed();
+    void _handleSchedule();
     void _handleNotFound();
     
     /**
