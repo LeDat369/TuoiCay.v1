@@ -1,0 +1,8 @@
+{
+    "name": "TuoiCay_Managers",
+    "version": "1.0.0",
+    "description": "High-level managers for TuoiCay - WiFi, MQTT, Web, Storage",
+    "keywords": ["wifi", "mqtt", "webserver", "manager"],
+    "frameworks": "arduino",
+    "platforms": ["espressif8266", "espressif32"]
+}

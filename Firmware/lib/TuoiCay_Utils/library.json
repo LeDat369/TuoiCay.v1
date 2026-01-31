@@ -1,0 +1,8 @@
+{
+    "name": "TuoiCay_Utils",
+    "version": "1.0.0",
+    "description": "Utility functions for TuoiCay project - Logger, CRC",
+    "keywords": ["logger", "utilities", "crc"],
+    "frameworks": "arduino",
+    "platforms": ["espressif8266", "espressif32"]
+}

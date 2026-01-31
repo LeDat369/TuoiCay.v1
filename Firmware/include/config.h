@@ -1,58 +1,88 @@
-/* config.h - Map chan va tuy chinh build cho firmware TuoiCay Phase 0 */
+/**
+ * @file config.h
+ * @brief Main configuration file - Version, constants, timeouts
+ * 
+ * LOGIC:
+ * - Định nghĩa version firmware theo SemVer
+ * - Các timeout cho WiFi, MQTT, sensors
+ * - Các threshold mặc định cho auto watering
+ * - Device identification
+ * 
+ * RULES: #CORE(1.2) - Project configuration
+ */
+
 #ifndef CONFIG_H
 #define CONFIG_H
 
-/* Board selection:
- * Uncomment if using NodeMCU (which provides a built-in ADC divider for A0).
- * If not defined, code assumes a raw ESP-12 style board (external divider may be required).
- */
-// #define BOARD_NODEMCU
+//=============================================================================
+// FIRMWARE VERSION (SemVer)
+//=============================================================================
+#define FW_VERSION_MAJOR    1
+#define FW_VERSION_MINOR    0
+#define FW_VERSION_PATCH    0
+#define FW_VERSION          "1.0.0"
+#define FW_NAME             "TuoiCay"
 
-/* Pin assignments (use GPIO numbers). Adjust if your board mapping differs. */
-#define PIN_PUMP 12                /* D6 (GPIO12) - MOSFET gate */
-#define PIN_SENSOR1_DIGITAL 14     /* D5 (GPIO14) - Sensor1 digital out */
-#define PIN_SENSOR2_DIGITAL 5      /* D1 (GPIO5)  - Sensor2 digital out */
-#define PIN_ADC A0                 /* ADC pin (A0) */
+//=============================================================================
+// DEVICE IDENTIFICATION
+//=============================================================================
+#define DEVICE_TYPE         "TUOICAY_V1"
+#define DEVICE_PREFIX       "TC"        // Prefix for device ID
 
-/* ADC configuration */
-#ifdef BOARD_NODEMCU
-#define ADC_HAS_DIVIDER 1          /* NodeMCU's module-level divider allows 0-3.3V on A0 */
-#else
-#define ADC_HAS_DIVIDER 0          /* Raw boards may need an external divider */
-/* If using an external divider, assumed example: R1=24k, R2=10k (see Docs/Pinout.md) */
-#define ADC_DIVIDER_R1 24000
-#define ADC_DIVIDER_R2 10000
-#endif
+//=============================================================================
+// TIMING CONSTANTS (milliseconds)
+//=============================================================================
+// Watchdog
+#define WDT_TIMEOUT_SEC         30      // Watchdog timeout in seconds
 
-/* Serial settings */
-#define SERIAL_BAUD 57600
+// WiFi
+#define WIFI_CONNECT_TIMEOUT_MS 30000   // 30s WiFi connection timeout
+#define WIFI_RECONNECT_MIN_MS   2000    // Min reconnect delay
+#define WIFI_RECONNECT_MAX_MS   30000   // Max reconnect delay (exponential backoff)
 
-/* Common magic numbers consolidated */
-/* Maximum ADC raw value (10-bit ADC) */
-#define ADC_MAX_RAW 1023
+// MQTT
+#define MQTT_CONNECT_TIMEOUT_MS 10000   // 10s MQTT connection timeout
+#define MQTT_RECONNECT_MIN_MS   2000    // Min reconnect delay
+#define MQTT_RECONNECT_MAX_MS   30000   // Max reconnect delay
+#define MQTT_KEEPALIVE_SEC      60      // MQTT keepalive interval
+#define MQTT_OFFLINE_QUEUE_SIZE 10      // Max messages in offline queue
 
-/* PWM configuration */
-#define PWM_MAX_DUTY 1023
-#define PWM_FREQ_HZ 1000
+// Sensors
+#define SENSOR_READ_INTERVAL_MS 5000    // Read sensors every 5s
+#define SENSOR_FILTER_SAMPLES   5       // Moving average samples
 
-/* Control defaults */
-#define DEFAULT_MAX_DURATION_S 300  /* safety max pump on duration */
-#define DEFAULT_COOLDOWN_S 60       /* cooldown after watering (s) */
+// Pump
+#define PUMP_MAX_RUNTIME_SEC    60      // Auto-off after 60s (safety)
+#define PUMP_MIN_OFF_TIME_MS    300000  // 5 minutes minimum off time (anti-cycling)
 
-/* Sensor/filter settings */
-#define FILTER_WINDOW_SIZE 8
-#define DEBOUNCE_MS 50
+// NTP
+#define NTP_SYNC_INTERVAL_MS    21600000 // 6 hours
+#define NTP_TIMEZONE_OFFSET     7       // UTC+7 Vietnam
 
-/* Logging buffer sizes */
-#define LOG_BUF_SIZE 192
-#define LOG_OUT_SIZE 256
+//=============================================================================
+// DEFAULT THRESHOLDS
+//=============================================================================
+#define DEFAULT_THRESHOLD_DRY   30      // % moisture to start watering
+#define DEFAULT_THRESHOLD_WET   50      // % moisture to stop watering
+#define MOISTURE_MIN_VALID      0       // Minimum valid moisture %
+#define MOISTURE_MAX_VALID      100     // Maximum valid moisture %
 
-/* Default thresholds for watering (percent) */
-#ifndef DEFAULT_THRESH_LOW_PCT
-#define DEFAULT_THRESH_LOW_PCT 30
-#endif
-#ifndef DEFAULT_THRESH_HIGH_PCT
-#define DEFAULT_THRESH_HIGH_PCT 60
-#endif
+//=============================================================================
+// ANALOG CALIBRATION (ESP8266 ADC 0-1023)
+//=============================================================================
+#define ADC_DRY_VALUE           1023    // ADC value when sensor is dry
+#define ADC_WET_VALUE           300     // ADC value when sensor is wet
 
-#endif /* CONFIG_H */
+//=============================================================================
+// SERIAL CONFIGURATION
+//=============================================================================
+#define SERIAL_BAUD_RATE        115200
+
+//=============================================================================
+// BUFFER SIZES
+//=============================================================================
+#define JSON_BUFFER_SIZE        256     // JSON document buffer
+#define TOPIC_BUFFER_SIZE       64      // MQTT topic buffer
+#define LOG_BUFFER_SIZE         128     // Log message buffer
+
+#endif // CONFIG_H

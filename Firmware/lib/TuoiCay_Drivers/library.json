@@ -1,0 +1,8 @@
+{
+    "name": "TuoiCay_Drivers",
+    "version": "1.0.0",
+    "description": "Hardware drivers for TuoiCay project - Sensor, Pump",
+    "keywords": ["sensor", "pump", "driver", "moisture"],
+    "frameworks": "arduino",
+    "platforms": ["espressif8266", "espressif32"]
+}
