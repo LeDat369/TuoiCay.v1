@@ -1,4 +1,4 @@
-/**
+#define OTA_PASSWORD        "your_ota_password"/**
  * @file ota_manager.h
  * @brief Over-The-Air Update Manager using ArduinoOTA
  * 

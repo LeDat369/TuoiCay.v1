@@ -85,6 +85,11 @@ bool autoModeEnabled = true;            // Auto watering mode
 uint8_t thresholdDry = DEFAULT_THRESHOLD_DRY;   // Start watering below this
 uint8_t thresholdWet = DEFAULT_THRESHOLD_WET;   // Stop watering above this
 
+// LED PWM breathing effect
+int ledBrightness = 0;                  // Current brightness (0-1023)
+int ledDirection = 5;                   // Brightness change direction
+unsigned long lastLedUpdate = 0;        // Last LED update time
+
 //=============================================================================
 // WEB SERVER CALLBACKS
 //=============================================================================
@@ -716,23 +721,11 @@ void loop() {
     unsigned long now = millis();
     
     //-------------------------------------------------------------------------
-    // TASK 2.1: Read sensors periodically
+    // TASK 6.3: Handle OTA updates (PRIORITY #1 - must be fast!)
     //-------------------------------------------------------------------------
-    if (now - lastSensorRead >= SENSOR_READ_INTERVAL_MS) {
-        lastSensorRead = now;
-        sensors.update();
-        sensors.logReadings();
+    if (wifiMgr.isConnected()) {
+        otaManager.update();  // Call OTA first for fast response
     }
-    
-    //-------------------------------------------------------------------------
-    // TASK 2.2: Update pump (check safety timeouts)
-    //-------------------------------------------------------------------------
-    pump.update();
-    
-    //-------------------------------------------------------------------------
-    // TASK 2.3: Auto watering logic
-    //-------------------------------------------------------------------------
-    autoWatering();
     
     //-------------------------------------------------------------------------
     // TASK 3.1: Update WiFi (handle reconnect)
@@ -773,17 +766,29 @@ void loop() {
     //-------------------------------------------------------------------------
     mqttMgr.update();
     
+    //-------------------------------------------------------------------------
+    // TASK 2.2: Update pump (check safety timeouts)
+    //-------------------------------------------------------------------------
+    pump.update();
+    
+    //-------------------------------------------------------------------------
+    // TASK 2.1: Read sensors periodically
+    //-------------------------------------------------------------------------
+    if (now - lastSensorRead >= SENSOR_READ_INTERVAL_MS) {
+        lastSensorRead = now;
+        sensors.update();
+        sensors.logReadings();
+    }
+    
+    //-------------------------------------------------------------------------
+    // TASK 2.3: Auto watering logic
+    //-------------------------------------------------------------------------
+    autoWatering();
+    
     // Publish sensor data periodically (every 5 seconds to reduce traffic)
     if (mqttMgr.isConnected() && now - lastMqttPublish >= MQTT_PUBLISH_INTERVAL_MS) {
         lastMqttPublish = now;
         mqttPublishSensorData();
-    }
-    
-    //-------------------------------------------------------------------------
-    // TASK 6.3: Handle OTA updates
-    //-------------------------------------------------------------------------
-    if (wifiMgr.isConnected()) {
-        otaManager.update();
     }
     
     //-------------------------------------------------------------------------
@@ -804,7 +809,28 @@ void loop() {
     yield();
     
     //-------------------------------------------------------------------------
-    // Non-blocking delay to reduce CPU usage
+    // LED PWM breathing effect (smooth fade in/out)
     //-------------------------------------------------------------------------
-    delay(10);  // 10ms = 100 loops/second
+    if (now - lastLedUpdate >= 10) {  // Update every 10ms for smooth animation
+        lastLedUpdate = now;
+        
+        ledBrightness += ledDirection;
+        
+        // Reverse direction at limits
+        if (ledBrightness >= 1023) {
+            ledBrightness = 1023;
+            ledDirection = -5;
+        } else if (ledBrightness <= 0) {
+            ledBrightness = 0;
+            ledDirection = 5;
+        }
+        
+        // Write PWM (note: LED is active LOW, so invert)
+        analogWrite(PIN_LED_STATUS, 1023 - ledBrightness);
+    }
+    
+    //-------------------------------------------------------------------------
+    // Non-blocking delay - reduced for faster OTA response
+    //-------------------------------------------------------------------------
+    delay(1);  // 1ms = 1000 loops/second for fast OTA handling
 }

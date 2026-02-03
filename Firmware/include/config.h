@@ -48,7 +48,7 @@
 #define MQTT_OFFLINE_QUEUE_SIZE 10      // Max messages in offline queue
 
 // Sensors
-#define SENSOR_READ_INTERVAL_MS 500     // Read sensors every 500ms (fastest)
+#define SENSOR_READ_INTERVAL_MS 2000    // Read sensors every 2s (OTA TEST!)
 #define SENSOR_FILTER_SAMPLES   3       // Moving average samples (faster)
 #define MQTT_PUBLISH_INTERVAL_MS 5000   // Publish MQTT every 5s (reduce traffic)
 
