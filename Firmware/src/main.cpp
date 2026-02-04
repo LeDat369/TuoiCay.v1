@@ -116,12 +116,37 @@ void setPump(bool on) {
 void setAutoMode(bool enabled) {
     autoModeEnabled = enabled;
     LOG_INF(MOD_SYSTEM, "mode", "Auto mode: %s", enabled ? "ON" : "OFF");
+    
+    // Save to storage - load existing config first to preserve all fields
+    DeviceConfig config;
+    if (!storage.loadConfig(config)) {
+        config.setDefaults();
+    }
+    config.autoMode = autoModeEnabled;
+    
+    if (storage.saveConfig(config)) {
+        LOG_DBG(MOD_STORAGE, "save", "Auto mode saved to storage");
+    }
 }
 
 void setThresholds(uint8_t dry, uint8_t wet) {
     thresholdDry = dry;
     thresholdWet = wet;
     LOG_INF(MOD_SYSTEM, "config", "Thresholds: dry=%d%%, wet=%d%%", dry, wet);
+    
+    // Save to storage - load existing config first to preserve all fields
+    DeviceConfig config;
+    if (!storage.loadConfig(config)) {
+        config.setDefaults();
+    }
+    config.thresholdDry = thresholdDry;
+    config.thresholdWet = thresholdWet;
+    
+    if (storage.saveConfig(config)) {
+        LOG_INF(MOD_STORAGE, "save", "Thresholds saved to storage");
+    } else {
+        LOG_ERR(MOD_STORAGE, "save", "Failed to save thresholds");
+    }
 }
 
 //=============================================================================
@@ -589,7 +614,11 @@ void setup() {
             thresholdWet = savedConfig.thresholdWet;
             autoModeEnabled = savedConfig.autoMode;
             pump.setMaxRuntime(savedConfig.maxRuntime);
-            LOG_INF(MOD_STORAGE, "load", "Config loaded from storage");
+            LOG_INF(MOD_STORAGE, "load", "Config loaded: dry=%d, wet=%d, auto=%d", 
+                    thresholdDry, thresholdWet, autoModeEnabled);
+        } else {
+            LOG_WRN(MOD_STORAGE, "load", "No saved config, using defaults: dry=%d, wet=%d", 
+                    thresholdDry, thresholdWet);
         }
         storage.listFiles();  // Debug: show stored files
     } else {

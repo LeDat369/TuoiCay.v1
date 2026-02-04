@@ -23,42 +23,8 @@ static const char INDEX_HTML[] PROGMEM = R"rawliteral(
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TuoiCay Dashboard</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding: 20px; }
-        .container { max-width: 500px; margin: 0 auto; }
-        h1 { color: #00d9ff; text-align: center; margin-bottom: 20px; }
-        .card { background: #16213e; border-radius: 10px; padding: 20px; margin-bottom: 15px; }
-        .card h2 { color: #00d9ff; font-size: 14px; margin-bottom: 10px; text-transform: uppercase; }
-        .value { font-size: 36px; font-weight: bold; color: #fff; }
-        .unit { font-size: 18px; color: #888; }
-        .status { display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: bold; }
-        .status.on { background: #00c853; color: #fff; }
-        .status.off { background: #ff5252; color: #fff; }
-        .status.auto { background: #2196f3; color: #fff; }
-        .status.manual { background: #ff9800; color: #fff; }
-        .btn { display: block; width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-pump { background: #00d9ff; color: #1a1a2e; }
-        .btn-mode { background: #7c4dff; color: #fff; }
-        .btn:active { transform: scale(0.98); }
-        .row { display: flex; gap: 15px; }
-        .row .card { flex: 1; }
-        .config { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
-        .config input { flex: 1; padding: 10px; border: 1px solid #333; border-radius: 5px; background: #0f0f23; color: #fff; }
-        .info { font-size: 12px; color: #666; text-align: center; margin-top: 20px; }
-        .schedule-item { display: flex; align-items: center; gap: 8px; margin: 8px 0; padding: 10px; background: #0f0f23; border-radius: 8px; }
-        .schedule-item input[type="time"] { padding: 8px; border: 1px solid #333; border-radius: 5px; background: #1a1a2e; color: #fff; }
-        .schedule-item input[type="number"] { width: 60px; padding: 8px; border: 1px solid #333; border-radius: 5px; background: #1a1a2e; color: #fff; }
-        .schedule-item label { font-size: 12px; color: #888; }
-        .switch { position: relative; width: 50px; height: 26px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #333; border-radius: 26px; transition: 0.3s; }
-        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.3s; }
-        input:checked + .slider { background: #00c853; }
-        input:checked + .slider:before { transform: translateX(24px); }
-        .btn-small { padding: 8px 15px; font-size: 14px; }
-    </style>
+    <title>TuoiCay v1.0</title>
+    <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;background:#1a1a2e;color:#eee;padding:20px}.container{max-width:500px;margin:0 auto}h1{color:#00d9ff;text-align:center;margin-bottom:20px}.card{background:#16213e;border-radius:10px;padding:20px;margin-bottom:15px}.card h2{color:#00d9ff;font-size:14px;margin-bottom:10px;text-transform:uppercase}.value{font-size:36px;font-weight:bold;color:#fff}.unit{font-size:18px;color:#888}.status{display:inline-block;padding:5px 15px;border-radius:20px;font-weight:bold}.status.on{background:#00c853;color:#fff}.status.off{background:#ff5252;color:#fff}.status.auto{background:#2196f3;color:#fff}.status.manual{background:#ff9800;color:#fff}.btn{display:block;width:100%;padding:15px;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:10px}.btn-pump{background:#00d9ff;color:#1a1a2e}.btn-mode{background:#7c4dff;color:#fff}.btn:active{transform:scale(0.98)}.row{display:flex;gap:15px}.row .card{flex:1}.config{display:flex;align-items:center;gap:10px;margin-top:10px}.config input{flex:1;padding:10px;border:1px solid #333;border-radius:5px;background:#0f0f23;color:#fff}.info{font-size:12px;color:#666;text-align:center;margin-top:20px}.schedule-item{display:flex;align-items:center;gap:8px;margin:8px 0;padding:10px;background:#0f0f23;border-radius:8px}.schedule-item input[type="time"]{padding:8px;border:1px solid #333;border-radius:5px;background:#1a1a2e;color:#fff}.schedule-item input[type="number"]{width:60px;padding:8px;border:1px solid #333;border-radius:5px;background:#1a1a2e;color:#fff}.schedule-item label{font-size:12px;color:#888}.switch{position:relative;width:50px;height:26px}.switch input{opacity:0;width:0;height:0}.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#333;border-radius:26px;transition:0.3s}.slider:before{position:absolute;content:"";height:20px;width:20px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:0.3s}input:checked+.slider{background:#00c853}input:checked+.slider:before{transform:translateX(24px)}.btn-small{padding:8px 15px;font-size:14px}</style>
 </head>
 <body>
     <div class="container">
@@ -165,10 +131,16 @@ static const char INDEX_HTML[] PROGMEM = R"rawliteral(
     </div>
     
     <script>
+        console.log('TuoiCay script loaded');
+        
         function fetchStatus() {
             fetch('/api/status')
-                .then(r => r.json())
+                .then(r => {
+                    console.log('Status response:', r.status);
+                    return r.json();
+                })
                 .then(d => {
+                    console.log('Status data:', d);
                     document.getElementById('moisture').textContent = d.moisture;
                     
                     const ps = document.getElementById('pumpStatus');
@@ -182,22 +154,37 @@ static const char INDEX_HTML[] PROGMEM = R"rawliteral(
                     ms.textContent = d.autoMode ? 'AUTO' : 'MANUAL';
                     ms.className = 'status ' + (d.autoMode ? 'auto' : 'manual');
                     
-                    document.getElementById('dryThreshold').value = d.thresholdDry;
-                    document.getElementById('wetThreshold').value = d.thresholdWet;
+                    // Only update threshold inputs if not focused (user is not editing)
+                    const dryInput = document.getElementById('dryThreshold');
+                    const wetInput = document.getElementById('wetThreshold');
+                    if (document.activeElement !== dryInput) {
+                        dryInput.value = d.thresholdDry;
+                    }
+                    if (document.activeElement !== wetInput) {
+                        wetInput.value = d.thresholdWet;
+                    }
+                    
                     document.getElementById('uptime').textContent = d.uptime;
                     document.getElementById('ip').textContent = d.ip;
                 })
-                .catch(e => console.error('Error:', e));
+                .catch(e => {
+                    console.error('fetchStatus error:', e);
+                });
         }
         
         function togglePump() {
+            console.log('togglePump called');
             fetch('/api/pump', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({action: 'toggle'})
             })
-            .then(r => r.json())
+            .then(r => {
+                console.log('Pump response status:', r.status);
+                return r.json();
+            })
             .then(d => {
+                console.log('Pump response:', d);
                 if (d.ok) {
                     const ps = document.getElementById('pumpStatus');
                     ps.textContent = d.pump ? 'ON' : 'OFF';
@@ -207,17 +194,25 @@ static const char INDEX_HTML[] PROGMEM = R"rawliteral(
                 }
                 setTimeout(fetchStatus, 500);
             })
-            .catch(e => console.error('Error:', e));
+            .catch(e => {
+                console.error('togglePump error:', e);
+                alert('Lỗi: ' + e.message);
+            });
         }
         
         function toggleMode() {
+            console.log('toggleMode called');
             fetch('/api/mode', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({toggle: true})
             })
-            .then(r => r.json())
+            .then(r => {
+                console.log('Mode response status:', r.status);
+                return r.json();
+            })
             .then(d => {
+                console.log('Mode response:', d);
                 if (d.ok) {
                     const ms = document.getElementById('modeStatus');
                     ms.textContent = d.autoMode ? 'AUTO' : 'MANUAL';
@@ -225,17 +220,44 @@ static const char INDEX_HTML[] PROGMEM = R"rawliteral(
                 }
                 setTimeout(fetchStatus, 500);
             })
-            .catch(e => console.error('Error:', e));
+            .catch(e => {
+                console.error('toggleMode error:', e);
+                alert('Lỗi: ' + e.message);
+            });
         }
         
         function saveConfig() {
             const dry = parseInt(document.getElementById('dryThreshold').value);
             const wet = parseInt(document.getElementById('wetThreshold').value);
+            console.log('saveConfig called with: dry=' + dry + ', wet=' + wet);
+            
+            if (dry >= wet) {
+                alert('Lỗi: Ngưỡng khô phải nhỏ hơn ngưỡng ướt!');
+                return;
+            }
+            
             fetch('/api/config', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({threshold_dry: dry, threshold_wet: wet})
-            }).then(() => { alert('Đã lưu!'); fetchStatus(); });
+            })
+            .then(r => {
+                console.log('Config response status:', r.status);
+                return r.json();
+            })
+            .then(d => {
+                console.log('Config response:', d);
+                if (d.ok) {
+                    alert('Đã lưu ngưỡng: Khô=' + dry + '%, Ướt=' + wet + '%');
+                    fetchStatus();
+                } else if (d.error) {
+                    alert('Lỗi: ' + d.error);
+                }
+            })
+            .catch(e => {
+                console.error('saveConfig error:', e);
+                alert('Lỗi khi lưu: ' + e.message);
+            });
         }
         
         // Speed control functions
@@ -245,18 +267,28 @@ static const char INDEX_HTML[] PROGMEM = R"rawliteral(
         
         function setSpeed() {
             const speed = parseInt(document.getElementById('pumpSpeed').value);
+            console.log('setSpeed called with:', speed);
             fetch('/api/speed', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({speed: speed})
             })
-            .then(r => r.json())
+            .then(r => {
+                console.log('Speed response status:', r.status);
+                return r.json();
+            })
             .then(d => {
+                console.log('Speed response:', d);
                 if (d.ok) {
                     alert('Đã áp dụng tốc độ ' + d.speed + '%');
+                } else if (d.error) {
+                    alert('Lỗi: ' + d.error);
                 }
             })
-            .catch(e => console.error('Error:', e));
+            .catch(e => {
+                console.error('setSpeed error:', e);
+                alert('Lỗi: ' + e.message);
+            });
         }
         
         function fetchSpeed() {
@@ -348,11 +380,19 @@ static const char INDEX_HTML[] PROGMEM = R"rawliteral(
             .catch(e => console.error('Save schedule error:', e));
         }
         
-        fetchStatus();
-        fetchSchedule();
-        fetchSpeed();
-        setInterval(fetchStatus, 1000);   // Update every 1s (fastest)
-        setInterval(fetchSchedule, 30000);
+        // Initialize
+        try {
+            console.log('Initializing...');
+            fetchStatus();
+            fetchSchedule();
+            fetchSpeed();
+            setInterval(fetchStatus, 1000);   // Update every 1s (fastest)
+            setInterval(fetchSchedule, 30000);
+            console.log('Initialization complete');
+        } catch (e) {
+            console.error('Init error:', e);
+            alert('Lỗi khởi tạo: ' + e.message);
+        }
     </script>
 </body>
 </html>
@@ -456,8 +496,14 @@ void WebServerManager::_handleStatus() {
     doc["reason"] = _getPumpReason ? _getPumpReason() : "none";
     doc["runtime"] = _getPumpRuntime ? _getPumpRuntime() : 0;
     doc["autoMode"] = _getAutoMode ? _getAutoMode() : false;
-    doc["thresholdDry"] = _thresholdDry ? *_thresholdDry : 30;
-    doc["thresholdWet"] = _thresholdWet ? *_thresholdWet : 50;
+    
+    uint8_t dryVal = _thresholdDry ? *_thresholdDry : 30;
+    uint8_t wetVal = _thresholdWet ? *_thresholdWet : 50;
+    doc["thresholdDry"] = dryVal;
+    doc["thresholdWet"] = wetVal;
+    
+    LOG_DBG(MOD_WEB, "status", "Returning thresholds: dry=%d, wet=%d", dryVal, wetVal);
+    
     doc["uptime"] = millis() / 1000;
     doc["ip"] = WiFi.localIP().toString();
     doc["heap"] = ESP.getFreeHeap();
@@ -556,14 +602,18 @@ void WebServerManager::_handleConfig() {
     LOG_DBG(MOD_WEB, "req", "POST /api/config");
     
     if (!_server.hasArg("plain")) {
+        LOG_WRN(MOD_WEB, "config", "No body in request");
         _sendError(400, "No body");
         return;
     }
+    
+    LOG_DBG(MOD_WEB, "config", "Request body: %s", _server.arg("plain").c_str());
     
     JsonDocument doc;
     DeserializationError err = deserializeJson(doc, _server.arg("plain"));
     
     if (err) {
+        LOG_WRN(MOD_WEB, "config", "JSON parse error: %s", err.c_str());
         _sendError(400, "Invalid JSON");
         return;
     }
@@ -572,16 +622,28 @@ void WebServerManager::_handleConfig() {
         uint8_t dry = doc["threshold_dry"];
         uint8_t wet = doc["threshold_wet"];
         
+        LOG_DBG(MOD_WEB, "config", "Received: dry=%d, wet=%d", dry, wet);
+        
         if (dry < wet && dry >= 0 && wet <= 100) {
             _setThresholds(dry, wet);
             LOG_INF(MOD_WEB, "config", "Thresholds updated: dry=%d, wet=%d", dry, wet);
+            
+            // Return success with actual values
+            String response = "{\"ok\":true,\"dry\":";
+            response += dry;
+            response += ",\"wet\":";
+            response += wet;
+            response += "}";
+            _sendJson(200, response);
         } else {
-            _sendError(400, "Invalid thresholds");
+            LOG_WRN(MOD_WEB, "config", "Invalid range: dry=%d, wet=%d", dry, wet);
+            _sendJson(400, "{\"ok\":false,\"error\":\"Ngưỡng không hợp lệ (phải: 0 <= khô < ướt <= 100)\"}");
             return;
         }
+    } else {
+        LOG_WRN(MOD_WEB, "config", "Missing threshold parameters");
+        _sendJson(400, "{\"ok\":false,\"error\":\"Thiếu tham số ngưỡng\"}");
     }
-    
-    _sendJson(200, "{\"ok\":true}");
 }
 
 void WebServerManager::_handleSpeed() {

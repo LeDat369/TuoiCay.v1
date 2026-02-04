@@ -118,7 +118,8 @@ function Start-OTAUpload {
         # Tìm và uncomment OTA settings trong env:nodemcuv2_ota
         $content = $content -replace '; upload_port = 192\.168\.1\.100', "upload_port = $IP"
         $content = $content -replace '; upload_flags =', 'upload_flags ='
-        $content = $content -replace ';     --auth=tuoicay123', "    --auth=$Password"
+        $authLine = "    --auth=$Password"
+        $content = $content -replace ';     `-`-auth=tuoicay123', $authLine
         
         # Ghi lại
         $content | Set-Content $iniPath -NoNewline
